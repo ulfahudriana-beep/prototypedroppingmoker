@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Dropping Modal Kerja (Moker) - PT Pegadaian Kanwil VI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        pegadaian: {
+                            green: '#008444',
+                            lightgreen: '#10b981',
+                            blue: '#00529c',
+                            darkblue: '#003366',
+                            gold: '#cba135',
+                            lightbg: '#f4f6f9',
+                            darkbg: '#111827'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-item-active { background-color: rgba(255, 255, 255, 0.15); border-left: 4px solid #cba135; }
+        @media print {
+            .no-print { display: none !important; }
+            .print-area { display: block !important; padding: 0 !important; margin: 0 !important; width: 100% !important; }
+            body { background: white; color: black; }
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+    </style>
+</head>
+<body class="bg-pegadaian-lightbg dark:bg-slate-900 dark:text-gray-100 transition-colors duration-200">
+
+    <div id="login-screen" class="fixed inset-0 bg-gradient-to-br from-pegadaian-darkblue via-slate-900 to-pegadaian-green z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl p-8 border border-white/10 space-y-6">
+            <div class="text-center space-y-2">
+                <div class="w-16 h-16 bg-gradient-to-tr from-pegadaian-green to-emerald-500 rounded-2xl mx-auto flex items-center justify-center shadow-md">
+                    <i class="fa-solid fa-vault text-white text-3xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Portal Moker Keuangan</h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Silakan pilih hak akses simulasi presentasi</p>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-2">Pilih Role Pengguna</label>
+                    <select id="login-role" onchange="toggleLoginBranchSelect()" class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-pegadaian-green">
+                        <option value="KANWIL">Divisi Keuangan Kanwil</option>
+                        <option value="CABANG">Kantor Cabang (User Unit)</option>
+                    </select>
+                </div>
+                
+                <div id="login-branch-block" class="hidden">
+                    <label class="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-2">Pilih Unit Kerja Cabang</label>
+                    <select id="login-branch" class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-pegadaian-green"></select>
+                </div>
+
+                <button onclick="executeSimulatedLogin()" class="w-full py-3 bg-pegadaian-green hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-lg text-sm flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>Masuk ke Dashboard Prototype</span>
+                </button>
+            </div>
+            <div class="text-center">
+                <span class="text-[10px] uppercase font-bold tracking-widest text-pegadaian-gold bg-amber-500/10 px-2.5 py-1 rounded-full">PT Pegadaian Persero &copy; 2026</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-app-layout" class="flex h-screen overflow-hidden hidden">
+        
+        <aside class="w-64 bg-gradient-to-b from-pegadaian-darkblue to-pegadaian-blue text-white flex flex-col no-print z-20 shadow-xl shrink-0">
+            <div class="p-5 flex items-center space-x-3 border-b border-white/10">
+                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md shrink-0">
+                    <i class="fa-solid fa-coins text-pegadaian-green text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-sm tracking-wide">PT PEGADAIAN</h1>
+                    <p class="text-[11px] text-emerald-300 font-medium">Keuangan - Dropping Moker</p>
+                </div>
+            </div>
+            
+            <div class="p-4 mx-3 my-4 bg-white/5 rounded-xl border border-white/10">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2 bg-pegadaian-gold/20 rounded-lg text-pegadaian-gold">
+                        <i class="fa-solid fa-user-shield" id="user-role-icon"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <p class="text-[10px] text-gray-300 uppercase tracking-wider font-bold" id="user-role-label">Role</p>
+                        <p class="text-xs font-semibold truncate w-40 text-emerald-400" id="user-name-label">Memuat Pengguna...</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex-1 px-3 space-y-1 overflow-y-auto">
+                <button onclick="switchMenu('dashboard')" id="btn-dashboard" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition duration-150 hover:bg-white/10 text-left">
+                    <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                    <span>Dashboard Kanwil</span>
+                </button>
+                <button onclick="switchMenu('permintaan')" id="btn-permintaan" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition duration-150 hover:bg-white/10 text-left">
+                    <i class="fa-solid fa-file-invoice-dollar w-5 text-center"></i>
+                    <span>Input Permintaan Baru</span>
+                </button>
+                <button onclick="switchMenu('riwayat')" id="btn-riwayat" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition duration-150 hover:bg-white/10 text-left">
+                    <i class="fa-solid fa-history w-5 text-center"></i>
+                    <span>Riwayat & Ekspor Data</span>
+                </button>
+                <button onclick="switchMenu('auditlog')" id="btn-auditlog" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition duration-150 hover:bg-white/10 text-left">
+                    <i class="fa-solid fa-shield-halved w-5 text-center"></i>
+                    <span>Audit Log Aktivitas</span>
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-white/10 space-y-2">
+                <button onclick="toggleDarkMode()" class="w-full flex items-center justify-between px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs transition">
+                    <span class="flex items-center"><i class="fa-solid fa-moon mr-2"></i> Mode Gelap</span>
+                    <div id="dark-mode-indicator" class="w-4 h-4 rounded-full bg-gray-400 transition-transform"></div>
+                </button>
+                <button onclick="logoutSimulation()" class="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-amber-600/20 hover:bg-amber-600 text-amber-200 text-xs font-semibold rounded-lg transition border border-amber-500/30">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Ganti Role Presentasi</span>
+                </button>
+                <button onclick="resetSystemData()" class="w-full flex items-center justify-center space-x-2 px-3 py-1.5 bg-red-600/10 hover:bg-red-600 text-red-200 text-[10px] font-medium rounded-lg transition border border-red-500/20">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                    <span>Reset Database Dummy</span>
+                </button>
+            </div>
+        </aside>
+
+        <div class="flex-1 flex flex-col overflow-hidden relative">
+            
+            <header class="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between px-6 no-print z-10 shadow-sm shrink-0">
+                <div class="flex items-center space-x-4">
+                    <h2 id="page-title" class="text-xl font-bold text-gray-800 dark:text-white">Dashboard Monitoring</h2>
+                    <span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs rounded-full font-semibold border border-emerald-200 dark:border-emerald-800/50">
+                        <i class="fa-solid fa-circle text-[8px] mr-1 animate-pulse"></i> Prototype Divisi Keuangan
+                    </span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-right hidden md:block">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium" id="live-date">Memuat Tanggal...</p>
+                        <p class="text-xs font-bold text-pegadaian-blue dark:text-emerald-400" id="live-time">00:00:00</p>
+                    </div>
+                    <div class="h-8 w-px bg-gray-200 dark:bg-slate-700"></div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-pegadaian-green to-emerald-500 flex items-center justify-center text-white font-bold text-xs shadow-inner" id="avatar-fallback-initials">
+                            KW
+                        </div>
+                        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300 hidden sm:inline" id="header-unit-title">Kanwil VI Makassar</span>
+                    </div>
+                </div>
+            </header>
+
+            <div id="toast-container" class="fixed top-20 right-6 z-50 space-y-2 pointer-events-none no-print"></div>
+
+            <main class="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-900/40 relative" id="main-scroll-area">
+
+                <section id="menu-dashboard" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/60">
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Trx Hari Ini</p>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white mt-1" id="metric-today-count">0 Trx</h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 font-semibold truncate mt-0.5" id="metric-today-total">Rp0</p>
+                        </div>
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/60">
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Trx Bulan Ini</p>
+                            <h3 class="text-lg font-bold text-pegadaian-green dark:text-emerald-400 mt-1" id="metric-month-count">0 Trx</h3>
+                            <p class="text-xs text-emerald-600 dark:text-emerald-400 font-bold truncate mt-0.5" id="metric-month-total">Rp0</p>
+                        </div>
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/60">
+                            <p class="text-[10px] text-amber-500 font-bold uppercase tracking-wider">Tambahan BNI</p>
+                            <h3 class="text-lg font-bold text-amber-600 dark:text-amber-400 mt-1" id="metric-bni-add-count">0 Trx</h3>
+                            <p class="text-xs font-bold text-amber-600 truncate mt-0.5" id="metric-bni-add-total">Rp0</p>
+                        </div>
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/60">
+                            <p class="text-[10px] text-indigo-500 font-bold uppercase tracking-wider">Total Moker BRI</p>
+                            <h3 class="text-lg font-bold text-indigo-600 dark:text-indigo-400 mt-1" id="metric-bri-count">0 Trx</h3>
+                            <p class="text-xs font-semibold text-gray-600 dark:text-gray-300 truncate mt-0.5" id="metric-bri-total">Rp0</p>
+                        </div>
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/60">
+                            <p class="text-[10px] text-teal-500 font-bold uppercase tracking-wider">Total Moker BSI</p>
+                            <h3 class="text-lg font-bold text-teal-600 dark:text-teal-400 mt-1" id="metric-bsi-count">0 Trx</h3>
+                            <p class="text-xs font-semibold text-gray-600 dark:text-gray-300 truncate mt-0.5" id="metric-bsi-total">Rp0</p>
+                        </div>
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/60 lg:col-span-2">
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Volume Transaksi Kumulatif</p>
+                            <h3 class="text-xl font-black text-pegadaian-blue dark:text-sky-400 mt-1" id="metric-aggregate-volume">Rp0</h3>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        <div class="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-4.5 rounded-2xl shadow-sm border border-slate-700 flex items-center justify-between">
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Frekuensi Permintaan Tertinggi</p>
+                                <h4 class="text-lg font-bold mt-1" id="insight-top-freq-branch">-</h4>
+                                <p class="text-xs text-emerald-400 mt-0.5" id="insight-top-freq-val">0 Permintaan</p>
+                            </div>
+                            <div class="p-3 bg-white/5 rounded-xl text-2xl text-pegadaian-gold"><i class="fa-solid fa-building-flag"></i></div>
+                        </div>
+                        <div class="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-4.5 rounded-2xl shadow-sm border border-slate-700 flex items-center justify-between">
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Nominal Kumulatif Terbesar</p>
+                                <h4 class="text-lg font-bold mt-1" id="insight-top-nominal-branch">-</h4>
+                                <p class="text-xs text-sky-400 mt-0.5" id="insight-top-nominal-val">Rp0</p>
+                            </div>
+                            <div class="p-3 bg-white/5 rounded-xl text-2xl text-emerald-400"><i class="fa-solid fa-money-bill-trend-up"></i></div>
+                        </div>
+                        <div class="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-4.5 rounded-2xl shadow-sm border border-slate-700 flex items-center justify-between">
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Lembaga Bank Teraktif</p>
+                                <h4 class="text-lg font-bold mt-1" id="insight-top-bank-name">-</h4>
+                                <p class="text-xs text-amber-400 mt-0.5" id="insight-top-bank-volume">Rp0</p>
+                            </div>
+                            <div class="p-3 bg-white/5 rounded-xl text-2xl text-cyan-400"><i class="fa-solid fa-building-columns"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/60 lg:col-span-2 space-y-4">
+                            <h4 class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center"><i class="fa-solid fa-chart-line text-pegadaian-green mr-2"></i> Matriks Volume dan Distribusi Anggaran Moker</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="h-56 relative"><canvas id="chartKanwilBranchVolume"></canvas></div>
+                                <div class="h-56 relative flex justify-center"><canvas id="chartKanwilBankPie"></canvas></div>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/60 flex flex-col">
+                            <h4 class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-ranking-star text-pegadaian-gold mr-2"></i> Peringkat Cabang Berdasar Nominal</h4>
+                            <div class="flex-1 overflow-y-auto max-h-56 pr-1">
+                                <table class="w-full text-xs text-left">
+                                    <thead>
+                                        <tr class="text-gray-400 border-b border-gray-100 dark:border-slate-700 pb-2">
+                                            <th class="pb-2 font-bold uppercase">Cabang</th>
+                                            <th class="pb-2 font-bold uppercase text-right">Total Anggaran</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="kanwil-ranking-rows" class="divide-y divide-gray-50 dark:divide-slate-700/50"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/60 space-y-4">
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wider flex items-center"><i class="fa-solid fa-gauge-high text-amber-500 mr-2"></i> Real-Time Monitoring Alokasi Plafon & Kuota Harian BNI</h4>
+                            <p class="text-xs text-gray-400 mt-0.5">Indikator ambang batas akumulasi drop dana per unit kerja cabang hari ini.</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="bni-quota-trackers-grid"></div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/60 space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 dark:border-slate-700 pb-2 gap-2">
+                            <h4 class="text-xs font-bold text-gray-800 dark:text-white uppercase tracking-wider"><i class="fa-solid fa-table-list text-pegadaian-blue mr-2"></i> Rincian Buku Posisi Penyaluran Per Lembaga Bank</h4>
+                            <div class="flex space-x-1 bg-gray-100 dark:bg-slate-900 p-1 rounded-xl no-print">
+                                <button onclick="setBankTabActive('BNI')" id="tab-bank-BNI" class="px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white">BNI</button>
+                                <button onclick="setBankTabActive('BRI')" id="tab-bank-BRI" class="px-3 py-1.5 rounded-lg text-xs font-bold transition text-gray-400 hover:text-gray-600">BRI</button>
+                                <button onclick="setBankTabActive('BSI')" id="tab-bank-BSI" class="px-3 py-1.5 rounded-lg text-xs font-bold transition text-gray-400 hover:text-gray-600">BSI</button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left">
+                                <thead class="bg-gray-50 dark:bg-slate-900 text-gray-500 uppercase tracking-wider border-b border-gray-100 dark:border-slate-700">
+                                    <tr>
+                                        <th class="p-3 font-bold">Tanggal</th>
+                                        <th class="p-3 font-bold">Kantor Cabang</th>
+                                        <th class="p-3 font-bold">Informasi Rekening</th>
+                                        <th class="p-3 font-bold text-right">Nominal Pengajuan</th>
+                                        <th class="p-3 font-bold text-center">Permintaan Ke-</th>
+                                        <th class="p-3 font-bold">Status Alokasi</th>
+                                        <th class="p-3 font-bold">Keterangan/Justifikasi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tab-bank-rows-container" class="divide-y divide-gray-100 dark:divide-slate-700/50"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="menu-permintaan" class="space-y-6 hidden">
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div class="xl:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/60 space-y-6 relative">
+                            <div id="edit-mode-banner" class="hidden absolute top-0 left-0 w-full bg-blue-600 text-white text-xs font-bold text-center py-1.5 rounded-t-2xl shadow-sm z-10 uppercase tracking-widest">
+                                <i class="fa-solid fa-pen-to-square mr-1"></i> Mode Perubahan Pengajuan Moker
+                            </div>
+
+                            <div>
+                                <h3 class="text-base font-bold text-gray-800 dark:text-white uppercase tracking-wide">Form Permintaan Dropping Dana Modal Kerja</h3>
+                                <p class="text-xs text-gray-400 font-medium mt-0.5">Isi seluruh parameter pengajuan dana dropping operasional cabang di bawah ini.</p>
+                            </div>
+
+                            <form id="form-moker-submission" class="space-y-5" onsubmit="handleFormSubmission(event)">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1.5">Tanggal Permintaan <span class="text-red-500">*</span></label>
+                                        <input type="date" id="form-tanggal" required class="w-full px-3 py-2.5 border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-pegadaian-green text-sm font-medium">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1.5">Kantor Cabang / Pengaju <span class="text-red-500">*</span></label>
+                                        <select id="form-cabang" required onchange="onCabangOrBankChanged()" class="w-full px-3 py-2.5 border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-pegadaian-green text-sm font-medium"></select>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1.5">Lembaga Bank Penerima <span class="text-red-500">*</span></label>
+                                        <select id="form-bank" required onchange="onCabangOrBankChanged()" class="w-full px-3 py-2.5 border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-pegadaian-green text-sm font-medium">
+                                            <option value="" disabled selected>-- Pilih Bank Transfer --</option>
+                                            <option value="BNI">Bank Negara Indonesia (BNI)</option>
+                                            <option value="BRI">Bank Rakyat Indonesia (BRI)</option>
+                                            <option value="BSI">Bank Syariah Indonesia (BSI)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1.5">Nominal Nilai Pengajuan <span class="text-red-500">*</span></label>
+                                        <div class="relative">
+                                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 font-bold text-gray-400 text-sm">Rp</span>
+                                            <input type="number" id="form-nominal" required min="100000" oninput="calculateFormLogicAndTerbilang()" placeholder="Contoh: 150000000" class="w-full pl-9 pr-3 py-2.5 border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-pegadaian-green text-sm font-bold">
+                                        </div>
+                                        <div id="form-terbilang-preview" class="text-[11px] text-pegadaian-green font-medium italic mt-1 bg-emerald-50 dark:bg-emerald-950/20 p-2 rounded-lg hidden border border-emerald-100 dark:border-emerald-900/40 leading-snug"></div>
+                                    </div>
+                                </div>
+
+                                <div id="conditional-letter-fields" class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 p-4.5 rounded-xl space-y-4 hidden shadow-sm">
+                                    <div class="flex items-start space-x-2">
+                                        <i class="fa-solid fa-file-signature text-amber-600 mt-0.5 animate-pulse"></i>
+                                        <div>
+                                            <p class="text-xs font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider">Kriteria Wajib Dokumen Dinas Terdeteksi</p>
+                                            <p class="text-[11px] text-amber-700 dark:text-amber-300">Pengajuan ini wajib melampirkan Surat Dinas Resmi. Sila lengkapi nomor korespondensi serta posisi kas likuiditas cabang terkini.</p>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                                        <div>
+                                            <label class="block text-[10px] font-bold uppercase text-amber-800 dark:text-amber-400 mb-1">No. Surat Dinas</label>
+                                            <input type="text" id="form-nosurat" placeholder="Auto-generated" class="w-full px-2.5 py-1.5 text-xs font-bold border border-amber-300 dark:border-amber-800 bg-white dark:bg-slate-900 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold uppercase text-amber-800 dark:text-amber-400 mb-1">Tingkat Urgensi</label>
+                                            <select id="form-urgensi" class="w-full px-2.5 py-1.5 text-xs font-semibold border border-amber-300 dark:border-amber-800 bg-white dark:bg-slate-900 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                                                <option value="PENTING">PENTING</option>
+                                                <option value="SEGERA">SEGERA / AMAT SEGERA</option>
+                                                <option value="BIASA">BIASA</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold uppercase text-amber-800 dark:text-amber-400 mb-1">Saldo Kas Brankas</label>
+                                            <input type="number" id="form-saldokas" value="0" min="0" class="w-full px-2.5 py-1.5 text-xs font-mono font-bold border border-amber-300 dark:border-amber-800 bg-white dark:bg-slate-900 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold uppercase text-amber-800 dark:text-amber-400 mb-1">Saldo Giro Bank</label>
+                                            <input type="number" id="form-saldogiro" value="0" min="0" class="w-full px-2.5 py-1.5 text-xs font-mono font-bold border border-amber-300 dark:border-amber-800 bg-white dark:bg-slate-900 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-slate-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 p-4 rounded-xl space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <label class="block text-[11px] font-bold uppercase text-gray-600 dark:text-gray-400">III. Komponen Proyeksi Alokasi Surat (Dapat Diedit)</label>
+                                        <span class="text-[9px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded font-mono font-bold">Porsi: 70% / 30%</span>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div class="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 p-2.5 rounded-lg flex flex-col justify-between">
+                                            <span class="text-[10px] text-gray-400 block mb-1">a. Alokasi Kas Kantor Induk Cabang (%)</span>
+                                            <div class="flex items-center justify-between">
+                                                <input type="number" id="form-pct-cabang" value="70" min="0" max="100" oninput="reallocateProjections('cabang')" class="w-14 px-2 py-1 border border-gray-200 dark:border-slate-600 text-xs text-center font-bold bg-slate-50 dark:bg-slate-900 rounded focus:outline-none focus:border-pegadaian-green">
+                                                <p id="calc-val-cabang" class="text-xs font-bold text-gray-700 dark:text-gray-200 font-mono">Rp0</p>
+                                            </div>
+                                        </div>
+                                        <div class="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 p-2.5 rounded-lg flex flex-col justify-between">
+                                            <span class="text-[10px] text-gray-400 block mb-1">b. Alokasi Anggaran Jaringan UPC/UPS (%)</span>
+                                            <div class="flex items-center justify-between">
+                                                <input type="number" id="form-pct-upc" value="30" min="0" max="100" oninput="reallocateProjections('upc')" class="w-14 px-2 py-1 border border-gray-200 dark:border-slate-600 text-xs text-center font-bold bg-slate-50 dark:bg-slate-900 rounded focus:outline-none focus:border-pegadaian-green">
+                                                <p id="calc-val-upc" class="text-xs font-bold text-gray-700 dark:text-gray-200 font-mono">Rp0</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1.5">Keterangan / Justifikasi Bisnis</label>
+                                    <textarea id="form-keterangan" rows="2" placeholder="Tuliskan justifikasi detail urgensi dropping modal kerja ini..." class="w-full px-3 py-2 border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-pegadaian-green text-sm font-medium resize-none"></textarea>
+                                </div>
+
+                                <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3 pt-2">
+                                    <button type="submit" id="btn-submit-form" class="w-full sm:flex-1 bg-pegadaian-green hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-md text-sm transition flex items-center justify-center space-x-2">
+                                        <i class="fa-solid fa-floppy-disk"></i>
+                                        <span>Simpan & Validasi Pengajuan</span>
+                                    </button>
+                                    <button type="button" onclick="clearSubmissionForm()" class="w-full sm:w-auto bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 font-semibold py-3 px-6 rounded-xl text-sm transition">
+                                        Batal / Clear
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/60 space-y-4">
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center"><i class="fa-solid fa-calculator text-pegadaian-green mr-1.5"></i> Pra-Kalkulasi Status Sistem</h4>
+                                <div class="space-y-2 text-[11px]">
+                                    <div class="flex justify-between pb-1 border-b border-gray-50 dark:border-slate-700/50">
+                                        <span class="text-gray-400">Sequence Trx Bank:</span>
+                                        <span id="calc-next-sequence" class="font-bold text-pegadaian-blue dark:text-sky-400">Ke-1</span>
+                                    </div>
+                                    <div id="calc-bni-quota-block" class="hidden bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-gray-100 dark:border-slate-700 space-y-1.5">
+                                        <p class="font-bold text-[9px] uppercase text-amber-600 text-center tracking-wide">Plafon Limit Kuota BNI</p>
+                                        <div class="flex justify-between"><span class="text-gray-400">Maks Limit Harian:</span><span id="calc-bni-plafond" class="font-bold">Rp0</span></div>
+                                        <div class="flex justify-between"><span class="text-gray-400">Total Terpakai Hari Ini:</span><span id="calc-bni-used" class="font-bold text-amber-600">Rp0</span></div>
+                                        <div class="flex justify-between border-t border-dashed border-gray-200 dark:border-slate-700 pt-1"><span class="text-gray-400">Sisa Kuota Bersih:</span><span id="calc-bni-remaining" class="font-bold text-pegadaian-green">Rp0</span></div>
+                                    </div>
+                                    <div class="pt-2">
+                                        <span class="text-gray-400 block mb-1">Estimasi Kategori Status:</span>
+                                        <div id="calc-badge-status" class="w-full text-center py-2 bg-slate-100 dark:bg-slate-900 text-gray-700 font-bold rounded-lg uppercase tracking-wider text-[10px]">Menunggu Parameter</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="menu-riwayat" class="space-y-6 hidden">
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/60 space-y-4">
+                        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-gray-100 dark:border-slate-700 pb-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wide">Buku Register Riwayat Pengajuan Modal Kerja</h3>
+                                <p class="text-[11px] text-gray-400 mt-0.5">Filter riwayat pengajuan, kelola perubahan data, serta lakukan ekspor data eksternal.</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2 no-print">
+                                <button onclick="exportHistoryToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3.5 rounded-xl text-xs transition flex items-center space-x-1.5 shadow-sm">
+                                    <i class="fa-solid fa-file-excel"></i> <span>Ekspor Excel</span>
+                                </button>
+                                <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-3.5 rounded-xl text-xs transition flex items-center space-x-1.5 shadow-sm">
+                                    <i class="fa-solid fa-file-pdf"></i> <span>Ekspor PDF / Cetak</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-gray-100 dark:border-slate-700/50 no-print">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Filter Unit Cabang</label>
+                                <select id="filter-cabang" onchange="applyFiltersAndRenderTable()" class="w-full p-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-xs rounded-lg font-medium focus:outline-none"></select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Filter Lembaga Bank</label>
+                                <select id="filter-bank" onchange="applyFiltersAndRenderTable()" class="w-full p-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-xs rounded-lg font-medium focus:outline-none">
+                                    <option value="">-- Semua Bank --</option>
+                                    <option value="BNI">BNI</option>
+                                    <option value="BRI">BRI</option>
+                                    <option value="BSI">BSI</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Filter Spesifik Tanggal</label>
+                                <input type="date" id="filter-tanggal" onchange="applyFiltersAndRenderTable()" class="w-full p-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-xs rounded-lg font-medium focus:outline-none">
+                            </div>
+                            <div class="flex items-end">
+                                <button onclick="clearAllFilters()" class="w-full py-2 bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-gray-200 font-semibold rounded-lg text-xs hover:bg-gray-300 dark:hover:bg-slate-600 transition">
+                                    Reset Parameter Filter
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left">
+                                <thead class="bg-gray-50 dark:bg-slate-900 text-gray-500 uppercase border-b border-gray-100 dark:border-slate-700">
+                                    <tr>
+                                        <th class="p-3 font-bold">Tanggal</th>
+                                        <th class="p-3 font-bold">Cabang</th>
+                                        <th class="p-3 font-bold">Bank</th>
+                                        <th class="p-3 font-bold text-right">Nominal</th>
+                                        <th class="p-3 font-bold">Status Alokasi</th>
+                                        <th class="p-3 font-bold text-center">Permintaan Ke-</th>
+                                        <th class="p-3 font-bold">No. Surat Dinas</th>
+                                        <th class="p-3 font-bold text-center no-print">Aksi Komando</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-history-rows-container" class="divide-y divide-gray-100 dark:divide-slate-700/50"></tbody>
+                            </table>
+                        </div>
+                        <div id="table-empty-placeholder" class="p-12 text-center text-gray-400 italic hidden">
+                            <i class="fa-solid fa-folder-open text-4xl block text-gray-200 mb-2"></i> Data riwayat pengajuan moker kosong.
+                        </div>
+                    </div>
+                </section>
+
+                <section id="menu-auditlog" class="space-y-4 hidden">
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/60 max-w-4xl mx-auto space-y-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wide"><i class="fa-solid fa-shield-halved text-pegadaian-blue mr-2"></i> Log Audit Jejak Aktivitas Operasional Sistem</h3>
+                            <p class="text-xs text-gray-400 mt-0.5">Rekaman mutasi kronologis sistem penanganan moker keuangan.</p>
+                        </div>
+                        <div class="space-y-2 max-h-[500px] overflow-y-auto pr-2" id="audit-log-wrapper"></div>
+                    </div>
+                </section>
+
+                <section id="menu-surat" class="space-y-6 hidden print-area">
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/60 flex flex-col md:flex-row gap-4 items-center justify-between no-print sticky top-0 z-10">
+                        <div class="flex items-center space-x-3">
+                            <button onclick="switchMenu('riwayat')" class="p-2 bg-gray-100 dark:bg-slate-700 rounded-xl hover:bg-gray-200 transition"><i class="fa-solid fa-arrow-left"></i></button>
+                            <div>
+                                <h3 class="text-sm font-bold text-gray-800 dark:text-white uppercase">Pratinjau Surat Dinas Resmi Pegadaian</h3>
+                                <p class="text-[11px] text-gray-400">Dokumen korespondensi kedinasan pengajuan dropping anggaran.</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="printLetterPDF()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-3.5 rounded-xl text-xs transition flex items-center space-x-1.5 shadow-sm">
+                                <i class="fa-solid fa-print"></i> <span>Print PDF / Cetak</span>
+                            </button>
+                            <button onclick="downloadWordDocument()" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-3.5 rounded-xl text-xs transition flex items-center space-x-1.5 shadow-sm">
+                                <i class="fa-solid fa-file-word"></i> <span>Download Word (.docx)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white text-black p-12 mx-auto max-w-3xl shadow-lg border border-gray-200 print:shadow-none print:border-none font-serif leading-relaxed text-sm" id="official-print-paper">
+                        <div class="border-b-4 border-double border-black pb-4 text-center relative flex items-center justify-between">
+                            <div class="w-24 shrink-0 text-left">
+                                <span class="font-sans font-black text-pegadaian-green text-lg tracking-tight block">pegadaian</span>
+                                <span class="text-[8px] font-sans block text-gray-400 uppercase tracking-widest -mt-1">Mengatasi Masalah Tanpa Masalah</span>
+                            </div>
+                            <div class="text-center font-sans">
+                                <h2 class="text-base font-black uppercase tracking-wide text-gray-900">PT PEGADAIAN (PERSERO)</h2>
+                                <p class="text-xs font-bold uppercase" id="let-lbl-wilayah">KANTOR CABANG BULUKUMBA • KANWIL VI MAKASSAR</p>
+                                <p class="text-[10px] text-gray-500 italic">Jl. Sultan Hasanuddin No. 12, Makassar, Sulawesi Selatan</p>
+                            </div>
+                            <div class="w-24 shrink-0"></div>
+                        </div>
+
+                        <div class="my-6 space-y-1 font-sans text-xs">
+                            <div class="flex"><span class="w-24 font-bold">Nomor</span><span class="mr-2">:</span><span id="let-meta-nosurat" class="font-mono font-bold">000/KC-BLK/VI/2026</span></div>
+                            <div class="flex"><span class="w-24 font-bold">Sifat</span><span class="mr-2">:</span><span id="let-meta-urgensi" class="uppercase font-bold">PENTING</span></div>
+                            <div class="flex"><span class="w-24 font-bold">Lampiran</span><span class="mr-2">:</span><span>1 Berkas Dokumen Posisi Kas</span></div>
+                            <div class="flex"><span class="w-24 font-bold">Perihal</span><span class="mr-2">:</span><span class="font-bold underline">Permohonan Dropping Dana Modal Kerja Tambahan Operasional</span></div>
+                        </div>
+
+                        <div class="my-5 font-sans text-xs">
+                            <p class="font-bold">Kepada Yth,</p>
+                            <p class="font-bold text-gray-900">Pemimpin PT Pegadaian Kantor Wilayah VI</p>
+                            <p class="text-gray-600">Up. Manajer Operasional Keuangan / Bagian Dropping Likuiditas</p>
+                            <p>Makassar</p>
+                        </div>
+
+                        <div class="space-y-4 font-serif text-[13px] text-justify leading-relaxed">
+                            <p class="indent-8">Dengan hormat, sehubungan dengan peningkatan intensitas aktivitas bisnis gadai serta guna mengantisipasi tingginya permintaan pencairan modal kerja operasional nasabah pada unit kerja kami, bersama surat ini kami ajukan permohonan dropping dana modal kerja sebesar <span class="font-bold" id="let-body-nominal">Rp0</span> (<span class="italic font-bold" id="let-body-terbilang">Nol Rupiah</span>).</p>
+                            
+                            <p>Sebagai bahan pertimbangan analisis likuiditas komparatif bagi Divisi Keuangan Kantor Wilayah, berikut kami sampaikan rincian parameter kondisi keuangan riil internal Kantor Cabang:</p>
+
+                            <table class="w-full border-collapse border border-black my-3 text-xs font-sans">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="border border-black p-2 text-center w-8">No</th>
+                                        <th class="border border-black p-2 text-left">Uraian Komponen Likuiditas / Kebutuhan Operasional</th>
+                                        <th class="border border-black p-2 text-right w-48">Jumlah Nominal (Rp)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="font-bold bg-gray-50">
+                                        <td class="border border-black p-1.5 text-center">I</td>
+                                        <td class="border border-black p-1.5" colspan="2">Posisi Kas Real-time Standar Brankas & Bank</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="border border-black p-1 text-center"></td>
+                                        <td class="border border-black p-1 pl-6">a. Saldo Kas Riil Brankas Kantor Cabang</td>
+                                        <td class="border border-black p-1 text-right font-mono font-medium shadow-inner" id="let-tbl-saldokas">Rp0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="border border-black p-1 text-center"></td>
+                                        <td class="border border-black p-1 pl-6">b. Saldo Rekening Koran / Giro Bank Terkait</td>
+                                        <td class="border border-black p-1 text-right font-mono font-medium" id="let-tbl-saldogiro">Rp0</td>
+                                    </tr>
+                                    <tr class="font-bold bg-gray-50">
+                                        <td class="border border-black p-1.5 text-center">II</td>
+                                        <td class="border border-black p-1.5" colspan="2">Usulan Penyaluran Kebutuhan Alokasi Inti</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="border border-black p-1 text-center"></td>
+                                        <td class="border border-black p-1 pl-6">a. Nominal Pengajuan Permintaan Dropping Moker</td>
+                                        <td class="border border-black p-1 text-right font-mono font-bold" id="let-tbl-nominal">Rp0</td>
+                                    </tr>
+                                    <tr class="font-bold bg-gray-50">
+                                        <td class="border border-black p-1.5 text-center">III</td>
+                                        <td class="border border-black p-1.5" colspan="2">Proyeksi Kebutuhan Modal Kerja Operasional Jaringan</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="border border-black p-1 text-center"></td>
+                                        <td class="border border-black p-1 pl-6">a. Distribusi Anggaran Operasional Induk Kantor Cabang</td>
+                                        <td class="border border-black p-1 text-right font-mono text-gray-700" id="let-tbl-proj-cabang">Rp0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="border border-black p-1 text-center"></td>
+                                        <td class="border border-black p-1 pl-6">b. Distribusi Anggaran Alokasi Jaringan Outlet UPC / UPS</td>
+                                        <td class="border border-black p-1 text-right font-mono text-gray-700" id="let-tbl-proj-upc">Rp0</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <p>Dana dropping moker tersebut kami mohon untuk dapat ditransferkan langsung ke rekening kedinasan resmi kantor cabang yang telah terdaftar pada sistem keuangan induk korporasi sebagai berikut:</p>
+                            
+                            <div class="bg-gray-50 p-3 rounded-xl border border-gray-200 space-y-1 font-sans text-xs ml-4">
+                                <p><span class="inline-block w-40 font-bold text-gray-500">Nama Akun Pemilik</span>: <span id="let-rek-nama" class="uppercase font-bold text-gray-800">Pegadaian Cabang Bulukumba</span></p>
+                                <p><span class="inline-block w-40 font-bold text-gray-500">Nomor Rekening Akun</span>: <span id="let-rek-nomor" class="font-mono font-bold text-gray-900 text-sm">0789012366</span></p>
+                                <p><span class="inline-block w-40 font-bold text-gray-500">Lembaga Perbankan</span>: <span id="let-rek-bank" class="uppercase font-bold text-pegadaian-blue">BANK BNI KANWIL VI</span></p>
+                            </div>
+
+                            <p class="indent-8">Demikian surat permohonan dropping anggaran modal kerja tambahan ini kami sampaikan dengan harapan agar dapat disetujui serta dicairkan sesegera mungkin demi kelancaran pelayanan nasabah. Atas perhatian, arahan, dan kerja sama Bapak/Ibu, kami haturkan terima kasih.</p>
+                        </div>
+
+                        <div class="flex justify-end mt-12 mb-6">
+                            <div class="text-center w-72 font-sans text-xs space-y-1">
+                                <p id="let-sign-tanggal" class="text-gray-500 italic">Bulukumba, 18 Juni 2026</p>
+                                <p class="font-bold">Hormat Kami,</p>
+                                <p class="font-bold uppercase text-gray-900" id="let-sign-jabatan">PEMIMPIN PT PEGADAIAN CABANG BULUKUMBA</p>
+                                <div class="h-20"></div>
+                                <p class="font-bold underline uppercase text-sm text-gray-900" id="let-sign-nama">NAMA PIMPINAN DUMMY</p>
+                                <p class="text-xs font-mono text-gray-400" id="let-sign-nik">NIK. 1987093005</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <div id="modal-detail" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200 no-print">
+        <div id="modal-detail-content" class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 dark:border-slate-700/60 transform scale-95 transition-transform duration-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-gray-100 dark:border-slate-700 pb-2">
+                <h4 class="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wider"><i class="fa-solid fa-circle-info text-pegadaian-blue mr-1.5"></i> Informasi Log Transaksi Dokumen Moker</h4>
+                <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-sm"></i></button>
+            </div>
+            <div id="modal-body-payload" class="space-y-3 text-xs"></div>
+            <div class="flex justify-end pt-2"><button onclick="closeDetailModal()" class="px-4 py-2 bg-gray-100 dark:bg-slate-700 font-bold rounded-lg hover:bg-gray-200 transition">Tutup Detail</button></div>
+        </div>
+    </div>
+
+    <script>
+        // --- UTILITY FUNCTIONS ---
+        function formatRupiah(angka) {
+            return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(angka);
+        }
+
+        function translateNumberToWords(number) {
+            if (number === 0) return "Nol";
+            const words = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+            let result = "";
+            if (number < 12) {
+                result = words[number];
+            } else if (number < 20) {
+                result = translateNumberToWords(number - 10) + " Belas";
+            } else if (number < 100) {
+                result = translateNumberToWords(Math.floor(number / 10)) + " Puluh " + translateNumberToWords(number % 10);
+            } else if (number < 200) {
+                result = "Seratus " + translateNumberToWords(number - 100);
+            } else if (number < 1000) {
+                result = translateNumberToWords(Math.floor(number / 100)) + " Ratus " + translateNumberToWords(number % 100);
+            } else if (number < 2000) {
+                result = "Seribu " + translateNumberToWords(number - 1000);
+            } else if (number < 1000000) {
+                result = translateNumberToWords(Math.floor(number / 1000)) + " Ribu " + translateNumberToWords(number % 1000);
+            } else if (number < 1000000000) {
+                result = translateNumberToWords(Math.floor(number / 1000000)) + " Juta " + translateNumberToWords(number % 1000000);
+            } else if (number < 1000000000000) {
+                result = translateNumberToWords(Math.floor(number / 1000000000)) + " Miliar " + translateNumberToWords(number % 1000000000);
+            }
+            return result.trim();
+        }
+
+        function showToast(title, desc, type) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            let color = "bg-blue-600";
+            let icon = "fa-info-circle";
+            if(type === "success") { color = "bg-emerald-600"; icon = "fa-check-circle"; }
+            if(type === "warning") { color = "bg-amber-500"; icon = "fa-exclamation-triangle"; }
+            if(type === "error") { color = "bg-red-600"; icon = "fa-times-circle"; }
+            
+            toast.className = `${color} text-white p-4 rounded-xl shadow-lg flex items-start space-x-3 transition-all duration-300 transform translate-x-full opacity-0 max-w-sm mb-2`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icon} mt-0.5"></i>
+                <div>
+                    <h5 class="text-sm font-bold">${title}</h5>
+                    <p class="text-xs opacity-90">${desc}</p>
+                </div>
+            `;
+            container.appendChild(toast);
+            
+            setTimeout(() => { toast.classList.remove('translate-x-full', 'opacity-0'); }, 10);
+            setTimeout(() => {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function updateClockWidget() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const dEl = document.getElementById('live-date');
+            const tEl = document.getElementById('live-time');
+            if(dEl) dEl.innerText = dateStr;
+            if(tEl) tEl.innerText = timeStr;
+        }
+
+        // --- 1. GLOBAL DATABASE REALISTIC DATA STRUCTURES ---
+        const DUMMY_BRANCHES = [
+            { id: "BLK", nama: "CP Bulukumba", kode: "10721", pimpinan: "Ulfa Hudriana", nik: "1995031201", rekBNI: "0789012311", rekBRI: "1072-01-012345-50-1", rekBSI: "7789012311", owner: "Pegadaian CP Bulukumba", kuotaBNI: 100000000 },
+            { id: "MRS", nama: "CP Maros", kode: "10744", pimpinan: "Andi Ahmad", nik: "1988110502", rekBNI: "0789012322", rekBRI: "1074-01-054321-50-2", rekBSI: "7789012322", owner: "Pegadaian CP Maros", kuotaBNI: 150000000 },
+            { id: "PLP", nama: "CP Palopo", kode: "10755", pimpinan: "Siti Rahma", nik: "1991042303", rekBNI: "0789012333", rekBRI: "1075-01-098765-50-3", rekBSI: "7789012333", owner: "Pegadaian CP Palopo", kuotaBNI: 200000000 },
+            { id: "MKS", nama: "CP Makassar", kode: "10711", pimpinan: "Hendra Wijaya", nik: "1985061504", rekBNI: "0789012344", rekBRI: "1071-01-011223-50-4", rekBSI: "7789012344", owner: "Pegadaian CP Makassar", kuotaBNI: 250000000 },
+            { id: "PRE", nama: "CP Parepare", kode: "10788", pimpinan: "Fahmi Idris", nik: "1990081705", rekBNI: "0789012355", rekBRI: "1078-01-044556-50-5", rekBSI: "7789012355", owner: "Pegadaian CP Parepare", kuotaBNI: 120000000 }
+        ];
+
+        const todayStr = new Date().toISOString().split('T')[0];
+        
+        // Initial Mock Database Seed
+        const BASE_HISTORY = [
+            { id: "TRX-401", tanggal: todayStr, cabangId: "BLK", bank: "BNI", nominal: 100000000, status: "Kuota Harian", sequence: 1, nomorSurat: "101/KC-BLK/VI/2026", saldoKas: 12000000, saldoGiro: 45000000, pctCabang: 70, pctUpc: 30, keterangan: "Dropping rutin pagi untuk induk." },
+            { id: "TRX-402", tanggal: todayStr, cabangId: "BLK", bank: "BNI", nominal: 50000000, status: "Tambahan Modal Kerja", sequence: 1, nomorSurat: "102/KC-BLK/VI/2026", saldoKas: 5000000, saldoGiro: 8000000, pctCabang: 70, pctUpc: 30, keterangan: "Tambahan moker mendesak pasar." },
+            { id: "TRX-403", tanggal: todayStr, cabangId: "MRS", bank: "BRI", nominal: 180000000, status: "Pencairan Standar", sequence: 1, nomorSurat: "089/KC-MRS/VI/2026", saldoKas: 15000000, saldoGiro: 25000000, pctCabang: 70, pctUpc: 30, keterangan: "Dropping via BRI unit regional." },
+            { id: "TRX-404", tanggal: todayStr, cabangId: "PLP", bank: "BSI", nominal: 300000000, status: "Pencairan Standar", sequence: 1, nomorSurat: "211/KC-PLP/VI/2026", saldoKas: 8000000, saldoGiro: 12000000, pctCabang: 80, pctUpc: 20, keterangan: "Dropping modal syariah skala besar." }
+        ];
+
+        let appRequests = [];
+        let appAuditLogs = [];
+        let currentRole = "KANWIL"; // KANWIL or CABANG
+        let currentBranchId = "";  // If role is CABANG
+        let activeBankTab = "BNI";
+        let chartInstanceVolume = null;
+        let chartInstancePie = null;
+        let editModeRecordId = null;
+        let globalSelectedIdForLetter = "";
+
+        // --- 2. AUTHENTICATION & LOGIN SIMULATION LOGIC ---
+        window.addEventListener('DOMContentLoaded', () => {
+            if(!localStorage.getItem('MOKER_DB_SEEDED')) {
+                localStorage.setItem('MOKER_DB_SEEDED', 'TRUE');
+                localStorage.setItem('MOKER_REQUESTS', JSON.stringify(BASE_HISTORY));
+                localStorage.setItem('MOKER_LOGS', JSON.stringify([
+                    { timestamp: new Date().toLocaleTimeString(), user: "SYSTEM", activity: "INITIALIZE", detail: "Database prototype moker berhasil di-seed otomatis." }
+                ]));
+            }
+            loadDataFromLocalStorage();
+            populateLoginDropdowns();
+            setTodayDefaultDate();
+            updateClockWidget();
+            setInterval(updateClockWidget, 1000);
+        });
+
+        function populateLoginDropdowns() {
+            const cmbLoginBranch = document.getElementById('login-branch');
+            cmbLoginBranch.innerHTML = "";
+            DUMMY_BRANCHES.forEach(b => {
+                cmbLoginBranch.innerHTML += `<option value="${b.id}">${b.nama} (${b.kode})</option>`;
+            });
+        }
+
+        function toggleLoginBranchSelect() {
+            const role = document.getElementById('login-role').value;
+            const block = document.getElementById('login-branch-block');
+            if(role === 'CABANG') block.classList.remove('hidden');
+            else block.classList.add('hidden');
+        }
+
+        function executeSimulatedLogin() {
+            currentRole = document.getElementById('login-role').value;
+            if(currentRole === 'CABANG') {
+                currentBranchId = document.getElementById('login-branch').value;
+                const bObj = DUMMY_BRANCHES.find(b => b.id === currentBranchId);
+                document.getElementById('user-role-label').innerText = "Kantor Cabang";
+                document.getElementById('user-name-label').innerText = bObj.nama;
+                document.getElementById('user-role-icon').className = "fa-solid fa-building-user text-pegadaian-gold";
+                document.getElementById('avatar-fallback-initials').innerText = currentBranchId;
+                document.getElementById('header-unit-title').innerText = `${bObj.nama} (${bObj.kode})`;
+                document.getElementById('btn-dashboard').classList.add('hidden');
+                switchMenu('permintaan');
+            } else {
+                currentBranchId = "";
+                document.getElementById('user-role-label').innerText = "Divisi Keuangan Kanwil";
+                document.getElementById('user-name-label').innerText = "Div. Keuangan Kanwil";
+                document.getElementById('user-role-icon').className = "fa-solid fa-user-shield text-pegadaian-gold";
+                document.getElementById('avatar-fallback-initials').innerText = "KW";
+                document.getElementById('header-unit-title').innerText = "Kantor Wilayah VI Makassar";
+                document.getElementById('btn-dashboard').classList.remove('hidden');
+                switchMenu('dashboard');
+            }
+            pushAuditLog("LOGIN", `Berhasil masuk sebagai ${currentRole === 'KANWIL' ? 'Divisi Keuangan Kanwil' : 'Kantor Cabang ID: ' + currentBranchId}`);
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-app-layout').classList.remove('hidden');
+            refreshAllUIViews();
+        }
+
+        function logoutSimulation() {
+            pushAuditLog("LOGIN", "Keluar dari session aktif presentasi.");
+            document.getElementById('main-app-layout').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+        }
+
+        // --- 3. STORAGE ENGINE MANAGEMENT ---
+        function loadDataFromLocalStorage() {
+            appRequests = JSON.parse(localStorage.getItem('MOKER_REQUESTS')) || [];
+            appAuditLogs = JSON.parse(localStorage.getItem('MOKER_LOGS')) || [];
+        }
+
+        function saveDataToLocalStorage() {
+            localStorage.setItem('MOKER_REQUESTS', JSON.stringify(appRequests));
+            localStorage.setItem('MOKER_LOGS', JSON.stringify(appAuditLogs));
+        }
+
+        function resetSystemData() {
+            if(confirm("Apakah Anda yakin ingin mereset seluruh data mutasi transaksi dan mengembalikan ke data awal dummy presentasi?")) {
+                localStorage.clear();
+                localStorage.setItem('MOKER_DB_SEEDED', 'TRUE');
+                localStorage.setItem('MOKER_REQUESTS', JSON.stringify(BASE_HISTORY));
+                localStorage.setItem('MOKER_LOGS', JSON.stringify([
+                    { timestamp: new Date().toLocaleTimeString(), user: "SYSTEM", activity: "RESET", detail: "Database di-reset ke kondisi awal dummy." }
+                ]));
+                loadDataFromLocalStorage();
+                showToast("Sistem Berhasil Direset", "Data dikembalikan ke state awal dummy.", "info");
+                refreshAllUIViews();
+            }
+        }
+
+        function pushAuditLog(act, details) {
+            const logUser = currentRole === 'KANWIL' ? 'DIV_KEUANGAN_KANWIL' : `CABANG_${currentBranchId}`;
+            appAuditLogs.unshift({
+                timestamp: new Date().toLocaleTimeString() + " " + new Date().toLocaleDateString(),
+                user: logUser,
+                activity: act,
+                detail: details
+            });
+            saveDataToLocalStorage();
+        }
+
+        // --- 4. NAVIGATION VIEW ENGINE ---
+        function switchMenu(menuTarget) {
+            if(currentRole === 'CABANG' && menuTarget === 'dashboard') {
+                showToast("Akses Ditolak", "Dashboard Kanwil hanya boleh diakses oleh Divisi Keuangan Wilayah.", "warning");
+                return;
+            }
+
+            // Hide all views
+            ['dashboard', 'permintaan', 'riwayat', 'auditlog', 'surat'].forEach(m => {
+                document.getElementById(`menu-${m}`).classList.add('hidden');
+                const btn = document.getElementById(`btn-${m}`);
+                if(btn) btn.classList.remove('sidebar-item-active');
+            });
+
+            // Show active target
+            document.getElementById(`menu-${menuTarget}`).classList.remove('hidden');
+            const targetBtn = document.getElementById(`btn-${menuTarget}`);
+            if(targetBtn) targetBtn.classList.add('sidebar-item-active');
+
+            // Dynamic header adjustments
+            const headerTitles = {
+                'dashboard': 'Dashboard Monitoring Keuangan Wilayah',
+                'permintaan': 'Input Permintaan Moker Baru',
+                'riwayat': 'Buku Registrasi Riwayat & Ekspor Data',
+                'auditlog': 'Secure Audit Trail Log Aktivitas',
+                'surat': 'Dokumen Dinas Resmi Kedinasan'
+            };
+            document.getElementById('page-title').innerText = headerTitles[menuTarget] || 'Sistem Keuangan';
+
+            refreshAllUIViews();
+
+            if(menuTarget === 'surat') {
+                renderOfficialLetterPayload(globalSelectedIdForLetter);
+            }
+            document.getElementById('main-scroll-area').scrollTo(0,0);
+        }
+
+        // --- 5. AUTOMATED CALCULATORS & TRANSACTION LOGIC ---
+        function setTodayDefaultDate() {
+            document.getElementById('form-tanggal').value = todayStr;
+        }
+
+        function populateFormCabangSelect() {
+            const cmb = document.getElementById('form-cabang');
+            const cmbFilter = document.getElementById('filter-cabang');
+            cmb.innerHTML = "";
+            cmbFilter.innerHTML = "<option value=''>-- Semua Cabang --</option>";
+            
+            if(currentRole === 'CABANG') {
+                const b = DUMMY_BRANCHES.find(x => x.id === currentBranchId);
+                cmb.innerHTML = `<option value="${b.id}">${b.nama} (${b.kode})</option>`;
+                cmbFilter.innerHTML = `<option value="${b.id}">${b.nama}</option>`;
+            } else {
+                cmb.innerHTML = `<option value="" disabled selected>-- Pilih Kantor Cabang --</option>`;
+                DUMMY_BRANCHES.forEach(b => {
+                    cmb.innerHTML += `<option value="${b.id}">${b.nama} (${b.kode})</option>`;
+                    cmbFilter.innerHTML += `<option value="${b.id}">${b.nama}</option>`;
+                });
+            }
+        }
+
+        function onCabangOrBankChanged() {
+            calculateFormLogicAndTerbilang();
+        }
+
+        function calculateFormLogicAndTerbilang() {
+            const branchId = document.getElementById('form-cabang').value;
+            const bank = document.getElementById('form-bank').value;
+            const nominal = parseFloat(document.getElementById('form-nominal').value) || 0;
+            const inputDate = document.getElementById('form-tanggal').value;
+
+            if(!branchId || !bank) return;
+
+            const historyFilter = appRequests.filter(r => r.cabangId === branchId && r.bank === bank && r.tanggal === inputDate && r.id !== editModeRecordId);
+            const nextSequence = historyFilter.length + 1;
+
+            const pctCabang = parseFloat(document.getElementById('form-pct-cabang').value) || 70;
+            const pctUpc = parseFloat(document.getElementById('form-pct-upc').value) || 30;
+            document.getElementById('calc-val-cabang').innerText = formatRupiah((pctCabang / 100) * nominal);
+            document.getElementById('calc-val-upc').innerText = formatRupiah((pctUpc / 100) * nominal);
+
+            if(nominal > 0) {
+                document.getElementById('form-terbilang-preview').classList.remove('hidden');
+                document.getElementById('form-terbilang-preview').innerText = "Terbilang: " + translateNumberToWords(nominal) + " Rupiah";
+            } else {
+                document.getElementById('form-terbilang-preview').classList.add('hidden');
+            }
+
+            let determinedStatus = "Pencairan Standar";
+            let letterRequired = false;
+
+            if(bank === "BNI") {
+                document.getElementById('calc-bni-quota-block').classList.remove('hidden');
+                const branchObj = DUMMY_BRANCHES.find(b => b.id === branchId);
+                const quotaLimit = branchObj ? branchObj.kuotaBNI : 0;
+                
+                const bniConsumedToday = appRequests
+                    .filter(r => r.cabangId === branchId && r.bank === "BNI" && r.tanggal === inputDate && r.id !== editModeRecordId)
+                    .reduce((sum, current) => sum + current.nominal, 0);
+                
+                const sisaCleanQuota = Math.max(0, quotaLimit - bniConsumedToday);
+
+                document.getElementById('calc-bni-plafond').innerText = formatRupiah(quotaLimit);
+                document.getElementById('calc-bni-used').innerText = formatRupiah(bniConsumedToday);
+                document.getElementById('calc-bni-remaining').innerText = formatRupiah(sisaCleanQuota);
+
+                if(nominal > sisaCleanQuota || bniConsumedToday >= quotaLimit) {
+                    determinedStatus = "Tambahan Modal Kerja";
+                    letterRequired = true;
+                    const prevAdditionalsCount = appRequests.filter(r => r.cabangId === branchId && r.bank === "BNI" && r.status === "Tambahan Modal Kerja").length;
+                    document.getElementById('calc-next-sequence').innerText = `Tambahan Ke-${prevAdditionalsCount + 1}`;
+                } else {
+                    determinedStatus = "Kuota Harian";
+                    document.getElementById('calc-next-sequence').innerText = `Ke-1 (Reguler)`;
+                }
+            } else {
+                document.getElementById('calc-bni-quota-block').classList.add('hidden');
+                const totalBankTrxCount = appRequests.filter(r => r.cabangId === branchId && r.bank === bank).length;
+                document.getElementById('calc-next-sequence').innerText = `Ke-${totalBankTrxCount + 1}`;
+                
+                if(bank === "BRI") letterRequired = true;
+                if(bank === "BSI" && nominal > 250000000) letterRequired = true;
+            }
+
+            const badge = document.getElementById('calc-badge-status');
+            badge.innerText = determinedStatus;
+            if(determinedStatus === "Tambahan Modal Kerja") {
+                badge.className = "w-full text-center py-2 bg-amber-100 dark:bg-amber-900/30 text-amber-700 font-bold rounded-lg text-[10px]";
+            } else {
+                badge.className = "w-full text-center py-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 font-bold rounded-lg text-[10px]";
+            }
+
+            if(letterRequired) {
+                document.getElementById('conditional-letter-fields').classList.remove('hidden');
+                if(!document.getElementById('form-nosurat').value) {
+                    const rnd = Math.floor(100 + Math.random() * 900);
+                    document.getElementById('form-nosurat').value = `${rnd}/KC-${branchId}/VI/2026`;
+                }
+            } else {
+                document.getElementById('conditional-letter-fields').classList.add('hidden');
+            }
+        }
+
+        function reallocateProjections(triggerSource) {
+            const nominal = parseFloat(document.getElementById('form-nominal').value) || 0;
+            let pBranch = parseInt(document.getElementById('form-pct-cabang').value) || 0;
+            let pUpc = parseInt(document.getElementById('form-pct-upc').value) || 0;
+
+            if(triggerSource === 'cabang') {
+                pUpc = 100 - pBranch;
+                if(pUpc < 0) { pUpc = 0; pBranch = 100; }
+                document.getElementById('form-pct-upc').value = pUpc;
+            } else {
+                pBranch = 100 - pUpc;
+                if(pBranch < 0) { pBranch = 0; pUpc = 100; }
+                document.getElementById('form-pct-cabang').value = pBranch;
+            }
+            document.getElementById('calc-val-cabang').innerText = formatRupiah((pBranch / 100) * nominal);
+            document.getElementById('calc-val-upc').innerText = formatRupiah((pUpc / 100) * nominal);
+        }
+
+        // --- 6. SUBMISSION HANDLER ---
+        function handleFormSubmission(e) {
+            e.preventDefault();
+            const date = document.getElementById('form-tanggal').value;
+            const branchId = document.getElementById('form-cabang').value;
+            const bank = document.getElementById('form-bank').value;
+            const nominal = parseFloat(document.getElementById('form-nominal').value);
+            const keterangan = document.getElementById('form-keterangan').value || "Dropping Moker Operasional";
+            
+            const pctCabang = parseInt(document.getElementById('form-pct-cabang').value) || 70;
+            const pctUpc = parseInt(document.getElementById('form-pct-upc').value) || 30;
+            const saldoKas = parseFloat(document.getElementById('form-saldokas').value) || 0;
+            const saldoGiro = parseFloat(document.getElementById('form-saldogiro').value) || 0;
+            const noSurat = document.getElementById('form-nosurat').value || "-";
+            const urgensi = document.getElementById('form-urgensi').value || "BIASA";
+
+            const bObj = DUMMY_BRANCHES.find(x => x.id === branchId);
+
+            let finalStatus = "Pencairan Standar";
+            let calculatedSeq = 1;
+
+            if(bank === "BNI") {
+                const bniTodaySum = appRequests
+                    .filter(r => r.cabangId === branchId && r.bank === "BNI" && r.tanggal === date && r.id !== editModeRecordId)
+                    .reduce((s, r) => s + r.nominal, 0);
+                const sisa = Math.max(0, bObj.kuotaBNI - bniTodaySum);
+                
+                if(nominal > sisa || bniTodaySum >= bObj.kuotaBNI) {
+                    finalStatus = "Tambahan Modal Kerja";
+                    calculatedSeq = appRequests.filter(r => r.cabangId === branchId && r.bank === "BNI" && r.status === "Tambahan Modal Kerja").length + 1;
+                } else {
+                    finalStatus = "Kuota Harian";
+                    calculatedSeq = 1;
+                }
+            } else {
+                calculatedSeq = appRequests.filter(r => r.cabangId === branchId && r.bank === bank).length + 1;
+            }
+
+            if(editModeRecordId) {
+                const idx = appRequests.findIndex(r => r.id === editModeRecordId);
+                if(idx !== -1) {
+                    appRequests[idx] = {
+                        ...appRequests[idx],
+                        tanggal: date, cabangId: branchId, bank, nominal, status: finalStatus,
+                        sequence: calculatedSeq, nomorSurat: noSurat, saldoKas, saldoGiro,
+                        pctCabang, pctUpc, keterangan
+                    };
+                    pushAuditLog("EDIT_PERMINTAAN", `Mengubah data pengajuan Moker ID: ${editModeRecordId} untuk ${bObj.nama}`);
+                    showToast("Update Berhasil", "Perubahan pengajuan moker disimpan.", "success");
+                    globalSelectedIdForLetter = editModeRecordId;
+                }
+            } else {
+                const newTrxId = "TRX-" + Math.floor(500 + Math.random() * 500);
+                appRequests.unshift({
+                    id: newTrxId, tanggal: date, cabangId: branchId, bank, nominal, status: finalStatus,
+                    sequence: calculatedSeq, nomorSurat: noSurat, saldoKas, saldoGiro,
+                    pctCabang, pctUpc, keterangan
+                });
+                pushAuditLog("TAMBAH_PERMINTAAN", `Membuat pengajuan Moker baru ID: ${newTrxId} sebesar ${formatRupiah(nominal)}`);
+                showToast("Pengajuan Berhasil", "Data moker masuk database keuangan Kanwil.", "success");
+                globalSelectedIdForLetter = newTrxId;
+            }
+
+            saveDataToLocalStorage();
+            clearSubmissionForm();
+
+            let shouldPreviewLetter = false;
+            if(bank === "BNI" && finalStatus === "Tambahan Modal Kerja") shouldPreviewLetter = true;
+            if(bank === "BRI") shouldPreviewLetter = true;
+            if(bank === "BSI" && nominal > 250000000) shouldPreviewLetter = true;
+
+            if(shouldPreviewLetter) {
+                switchMenu('surat');
+            } else {
+                switchMenu('riwayat');
+            }
+        }
+
+        function clearSubmissionForm() {
+            editModeRecordId = null;
+            document.getElementById('edit-mode-banner').classList.add('hidden');
+            document.getElementById('form-moker-submission').reset();
+            document.getElementById('btn-submit-form').innerHTML = '<i class="fa-solid fa-floppy-disk"></i><span>Simpan & Validasi Pengajuan</span>';
+            document.getElementById('btn-submit-form').className = "w-full sm:flex-1 bg-pegadaian-green hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-md text-sm transition flex items-center justify-center space-x-2";
+            setTodayDefaultDate();
+            populateFormCabangSelect();
+            calculateFormLogicAndTerbilang();
+        }
+
+        // --- 7. UI RENDER ENGINE FOR ALL VIEW DASHBOARDS & FILTERS ---
+        function refreshAllUIViews() {
+            loadDataFromLocalStorage();
+            populateFormCabangSelect();
+            
+            if(currentRole === 'KANWIL') {
+                renderKanwilDashboardData();
+            }
+            
+            renderHistoryRegisterTable();
+            renderAuditTrailLogs();
+        }
+
+        function renderKanwilDashboardData() {
+            const todayRequests = appRequests.filter(r => r.tanggal === todayStr);
+            const sumTodayNominal = todayRequests.reduce((s, r) => s + r.nominal, 0);
+            
+            const currentMonthPrefix = todayStr.substring(0, 7);
+            const monthRequests = appRequests.filter(r => r.tanggal.startsWith(currentMonthPrefix));
+            const sumMonthNominal = monthRequests.reduce((s, r) => s + r.nominal, 0);
+
+            const bniAddRequests = appRequests.filter(r => r.bank === "BNI" && r.status === "Tambahan Modal Kerja");
+            const sumBniAddNominal = bniAddRequests.reduce((s, r) => s + r.nominal, 0);
+
+            const briRequests = appRequests.filter(r => r.bank === "BRI");
+            const sumBriNominal = briRequests.reduce((s, r) => s + r.nominal, 0);
+
+            const bsiRequests = appRequests.filter(r => r.bank === "BSI");
+            const sumBsiNominal = bsiRequests.reduce((s, r) => s + r.nominal, 0);
+
+            const totalAggregateVolume = appRequests.reduce((s, r) => s + r.nominal, 0);
+
+            document.getElementById('metric-today-count').innerText = `${todayRequests.length} Transaksi`;
+            document.getElementById('metric-today-total').innerText = formatRupiah(sumTodayNominal);
+            document.getElementById('metric-month-count').innerText = `${monthRequests.length} Transaksi`;
+            document.getElementById('metric-month-total').innerText = formatRupiah(sumMonthNominal);
+            
+            document.getElementById('metric-bni-add-count').innerText = `${bniAddRequests.length} Overlimit`;
+            document.getElementById('metric-bni-add-total').innerText = formatRupiah(sumBniAddNominal);
+            
+            document.getElementById('metric-bri-count').innerText = `${briRequests.length} Transaksi`;
+            document.getElementById('metric-bri-total').innerText = formatRupiah(sumBriNominal);
+            
+            document.getElementById('metric-bsi-count').innerText = `${bsiRequests.length} Transaksi`;
+            document.getElementById('metric-bsi-total').innerText = formatRupiah(sumBsiNominal);
+
+            document.getElementById('metric-aggregate-volume').innerText = formatRupiah(totalAggregateVolume);
+
+            const freqMap = {};
+            const nominalMap = {};
+            DUMMY_BRANCHES.forEach(b => { freqMap[b.id] = 0; nominalMap[b.id] = 0; });
+            
+            appRequests.forEach(r => {
+                if(freqMap[r.cabangId] !== undefined) freqMap[r.cabangId]++;
+                if(nominalMap[r.cabangId] !== undefined) nominalMap[r.cabangId] += r.nominal;
+            });
+
+            let topFreqBranchId = "-";
+            let maxFreq = -1;
+            let topNominalBranchId = "-";
+            let maxNominal = -1;
+
+            DUMMY_BRANCHES.forEach(b => {
+                if(freqMap[b.id] > maxFreq) { maxFreq = freqMap[b.id]; topFreqBranchId = b.nama; }
+                if(nominalMap[b.id] > maxNominal) { maxNominal = nominalMap[b.id]; topNominalBranchId = b.nama; }
+            });
+
+            document.getElementById('insight-top-freq-branch').innerText = maxFreq > 0 ? topFreqBranchId : "-";
+            document.getElementById('insight-top-freq-val').innerText = `${maxFreq} Kali Drop Moker`;
+
+            document.getElementById('insight-top-nominal-branch').innerText = maxNominal > 0 ? topNominalBranchId : "-";
+            document.getElementById('insight-top-nominal-val').innerText = formatRupiah(maxNominal);
+
+            let topBank = "BNI";
+            let topBankVol = sumBniAddNominal; 
+            if(sumBriNominal > sumBsiNominal && sumBriNominal > (sumBniAddNominal)) { topBank = "BRI"; topBankVol = sumBriNominal; }
+            else if(sumBsiNominal > sumBriNominal && sumBsiNominal > (sumBniAddNominal)) { topBank = "BSI"; topBankVol = sumBsiNominal; }
+            else { topBank = "BNI"; topBankVol = appRequests.filter(r=>r.bank==="BNI").reduce((s,c)=>s+c.nominal,0); }
+
+            document.getElementById('insight-top-bank-name').innerText = `BANK ${topBank}`;
+            document.getElementById('insight-top-bank-volume').innerText = `Volume: ${formatRupiah(topBankVol)}`;
+
+            const rankingRows = document.getElementById('kanwil-ranking-rows');
+            rankingRows.innerHTML = "";
+            const sortedBranches = [...DUMMY_BRANCHES].sort((x, y) => nominalMap[y.id] - nominalMap[x.id]);
+            sortedBranches.forEach(b => {
+                rankingRows.innerHTML += `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                        <td class="py-2 font-semibold text-gray-800 dark:text-gray-200">${b.nama}</td>
+                        <td class="py-2 text-right font-mono text-gray-600 dark:text-gray-400 font-bold">${formatRupiah(nominalMap[b.id])}</td>
+                    </tr>
+                `;
+            });
+
+            const bniGrid = document.getElementById('bni-quota-trackers-grid');
+            bniGrid.innerHTML = "";
+            DUMMY_BRANCHES.forEach(b => {
+                const consumedToday = appRequests
+                    .filter(r => r.cabangId === b.id && r.bank === "BNI" && r.tanggal === todayStr)
+                    .reduce((s, r) => s + r.nominal, 0);
+                
+                const pct = Math.min(100, Math.round((consumedToday / b.kuotaBNI) * 100));
+                const sisa = Math.max(0, b.kuotaBNI - consumedToday);
+
+                let colorClass = "bg-emerald-500";
+                let textStatus = "Aman Standar";
+                if(pct >= 75 && pct < 100) { colorClass = "bg-amber-500"; textStatus = "Kritis / Menipis"; }
+                else if(pct >= 100) { colorClass = "bg-red-600"; textStatus = "Over Plafon (Tambahan)"; }
+
+                bniGrid.innerHTML += `
+                    <div class="p-3.5 bg-slate-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-gray-800 dark:text-white">${b.nama}</span>
+                            <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded ${pct >= 100 ? 'bg-red-100 text-red-700' : 'bg-slate-200 text-gray-700'}">${pct}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                            <div class="${colorClass} h-full" style="width: ${pct}%"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-gray-400 font-medium">
+                            <span>Sisa Kuota: <b>${formatRupiah(sisa)}</b></span>
+                            <span class="italic">${textStatus}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            renderBankTabularView();
+
+            setTimeout(() => {
+                renderChartJsGraphics(sortedBranches, nominalMap, sumBriNominal, sumBsiNominal);
+            }, 50);
+        }
+
+        function setBankTabActive(bankCode) {
+            activeBankTab = bankCode;
+            ['BNI', 'BRI', 'BSI'].forEach(b => {
+                const el = document.getElementById(`tab-bank-${b}`);
+                if(b === bankCode) {
+                    el.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white";
+                } else {
+                    el.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition text-gray-400 hover:text-gray-600";
+                }
+            });
+            renderBankTabularView();
+        }
+
+        function renderBankTabularView() {
+            const container = document.getElementById('tab-bank-rows-container');
+            container.innerHTML = "";
+            
+            const filteredTrx = appRequests.filter(r => r.bank === activeBankTab);
+            if(filteredTrx.length === 0) {
+                container.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400 italic">Tidak ada transaksi untuk bank ${activeBankTab} hari ini.</td></tr>`;
+                return;
+            }
+
+            filteredTrx.forEach(r => {
+                const b = DUMMY_BRANCHES.find(x => x.id === r.cabangId);
+                const rekNo = activeBankTab === 'BNI' ? b.rekBNI : (activeBankTab === 'BRI' ? b.rekBRI : b.rekBSI);
+                
+                let badgeStyle = "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-400";
+                if(r.status === "Tambahan Modal Kerja") badgeStyle = "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400";
+                if(r.status === "Kuota Harian") badgeStyle = "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400";
+
+                container.innerHTML += `
+                    <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-700/20 transition">
+                        <td class="p-3 font-medium text-gray-600 dark:text-gray-300">${r.tanggal}</td>
+                        <td class="p-3 font-bold text-gray-900 dark:text-white">${b ? b.nama : r.cabangId}</td>
+                        <td class="p-3">
+                            <p class="font-semibold text-gray-800 dark:text-gray-200">${b ? b.owner : '-'}</p>
+                            <p class="font-mono text-[11px] text-gray-400">${rekNo}</p>
+                        </td>
+                        <td class="p-3 text-right font-mono font-bold text-gray-900 dark:text-white">${formatRupiah(r.nominal)}</td>
+                        <td class="p-3 text-center font-bold text-pegadaian-blue dark:text-sky-400">${r.status === 'Tambahan Modal Kerja' ? 'Tambahan Ke-' + r.sequence : 'Ke-' + r.sequence}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${badgeStyle}">${r.status}</span></td>
+                        <td class="p-3 text-gray-500 italic max-w-xs truncate">${r.keterangan}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderChartJsGraphics(sortedBranches, nominalMap, briVol, bsiVol) {
+            const isDark = document.documentElement.classList.contains('dark');
+            const lblColor = isDark ? '#94a3b8' : '#64748b';
+
+            const branchLabels = sortedBranches.map(b => b.nama);
+            const branchData = sortedBranches.map(b => nominalMap[b.id]);
+
+            const sumBniClean = appRequests.filter(r=>r.bank==='BNI').reduce((s,c)=>s+c.nominal,0);
+
+            if(chartInstanceVolume) chartInstanceVolume.destroy();
+            if(chartInstancePie) chartInstancePie.destroy();
+
+            const ctxBar = document.getElementById('chartKanwilBranchVolume').getContext('2d');
+            if(ctxBar) {
+                chartInstanceVolume = new Chart(document.getElementById('chartKanwilBranchVolume'), {
+                    type: 'bar',
+                    data: {
+                        labels: branchLabels,
+                        datasets: [{
+                            label: 'Volume Drop Moker (Rp)',
+                            data: branchData,
+                            backgroundColor: '#00529c',
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { grid: { display: false }, ticks: { color: lblColor, font: { size: 9 } } },
+                            x: { grid: { display: false }, ticks: { color: lblColor, font: { size: 9 } } }
+                        }
+                    }
+                });
+            }
+
+            const ctxPie = document.getElementById('chartKanwilBankPie').getContext('2d');
+            if(ctxPie) {
+                chartInstancePie = new Chart(document.getElementById('chartKanwilBankPie'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['BNI Penyaluran', 'BRI Penyaluran', 'BSI Penyaluran'],
+                        datasets: [{
+                            data: [sumBniClean, briVol, bsiVol],
+                            backgroundColor: ['#cba135', '#00529c', '#10b981'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: lblColor, font: { size: 10 } } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function renderHistoryRegisterTable() {
+            const valTanggal = document.getElementById('filter-tanggal').value;
+            const valCabang = document.getElementById('filter-cabang').value;
+            const valBank = document.getElementById('filter-bank').value;
+
+            let filtered = appRequests;
+
+            if(currentRole === 'CABANG') {
+                filtered = filtered.filter(r => r.cabangId === currentBranchId);
+            }
+
+            if(valTanggal) filtered = filtered.filter(r => r.tanggal === valTanggal);
+            if(valCabang) filtered = filtered.filter(r => r.cabangId === valCabang);
+            if(valBank) filtered = filtered.filter(r => r.bank === valBank);
+
+            const tbody = document.getElementById('table-history-rows-container');
+            const placeholder = document.getElementById('table-empty-placeholder');
+            tbody.innerHTML = "";
+
+            if(filtered.length === 0) {
+                placeholder.classList.remove('hidden');
+                return;
+            } else {
+                placeholder.classList.add('hidden');
+            }
+
+            filtered.forEach(r => {
+                const b = DUMMY_BRANCHES.find(x => x.id === r.cabangId);
+                
+                let badge = "bg-gray-100 text-gray-700";
+                if(r.status === 'Kuota Harian') badge = "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300";
+                if(r.status === 'Tambahan Modal Kerja') badge = "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300";
+                
+                let letterTriggerBadge = `<span class="text-gray-400 italic">Tidak Ada</span>`;
+                let isLetterMandatory = false;
+                if(r.bank === "BNI" && r.status === "Tambahan Modal Kerja") isLetterMandatory = true;
+                if(r.bank === "BRI") isLetterMandatory = true;
+                if(r.bank === "BSI" && r.nominal > 250000000) isLetterMandatory = true;
+
+                if(isLetterMandatory) {
+                    letterTriggerBadge = `<button onclick="triggerRowLetterCommand('${r.id}')" class="text-pegadaian-blue hover:underline font-mono font-bold flex items-center space-x-1"><i class="fa-solid fa-file-pdf text-red-500"></i> <span>${r.nomorSurat || 'Lihat Surat'}</span></button>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                        <td class="p-3 font-medium text-gray-500">${r.tanggal}</td>
+                        <td class="p-3 font-bold text-gray-900 dark:text-white">${b ? b.nama : r.cabangId}</td>
+                        <td class="p-3 font-extrabold text-pegadaian-blue dark:text-sky-400">${r.bank}</td>
+                        <td class="p-3 text-right font-mono font-bold">${formatRupiah(r.nominal)}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${badge}">${r.status}</span></td>
+                        <td class="p-3 text-center font-semibold text-gray-600 dark:text-gray-400">${r.status === 'Tambahan Modal Kerja' ? 'Tambahan Ke-' + r.sequence : 'Ke-' + r.sequence}</td>
+                        <td class="p-3">${letterTriggerBadge}</td>
+                        <td class="p-3 text-center no-print flex items-center justify-center space-x-1">
+                            <button onclick="viewRowDetails('${r.id}')" class="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded" title="Detail Metadata"><i class="fa-solid fa-eye"></i></button>
+                            <button onclick="triggerEditRowCommand('${r.id}')" class="p-1.5 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 rounded" title="Ubah Data"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="executeDeleteRowCommand('${r.id}')" class="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded" title="Hapus Data"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderAuditTrailLogs() {
+            const wrapper = document.getElementById('audit-log-wrapper');
+            wrapper.innerHTML = "";
+            if(appAuditLogs.length === 0) {
+                wrapper.innerHTML = `<p class="text-center italic text-gray-400 py-6">Audit log kosong.</p>`;
+                return;
+            }
+            appAuditLogs.forEach(l => {
+                let badgeColor = "text-blue-500 bg-blue-500/10";
+                if(l.activity.includes("HAPUS")) badgeColor = "text-red-500 bg-red-500/10";
+                if(l.activity.includes("EDIT")) badgeColor = "text-amber-500 bg-amber-500/10";
+
+                wrapper.innerHTML += `
+                    <div class="p-3 bg-slate-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl flex items-start space-x-3 text-[11px]">
+                        <span class="font-mono text-gray-400 shrink-0 bg-white dark:bg-slate-800 p-1 rounded border border-gray-100 dark:border-slate-700">${l.timestamp}</span>
+                        <div class="flex-1">
+                            <span class="font-bold text-gray-600 dark:text-gray-300 mr-1.5">[${l.user}]</span>
+                            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider mr-1.5 ${badgeColor}">${l.activity}</span>
+                            <span class="text-gray-500 dark:text-gray-400">${l.detail}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function clearAllFilters() {
+            document.getElementById('filter-tanggal').value = '';
+            document.getElementById('filter-cabang').value = '';
+            document.getElementById('filter-bank').value = '';
+            applyFiltersAndRenderTable();
+        }
+
+        function applyFiltersAndRenderTable() {
+            renderHistoryRegisterTable();
+        }
+
+        // --- 8. ACTION COMMANDS HANDLERS (VIEW, EDIT, DELETE) ---
+        function viewRowDetails(recordId) {
+            const r = appRequests.find(x => x.id === recordId);
+            if(!r) return;
+            const b = DUMMY_BRANCHES.find(x => x.id === r.cabangId);
+            
+            const payload = document.getElementById('modal-body-payload');
+            payload.innerHTML = `
+                <div class="grid grid-cols-2 gap-2 border-b border-gray-100 dark:border-slate-700 pb-2">
+                    <div><span class="text-gray-400 block text-[10px]">ID REKORD</span><b class="font-mono text-gray-800 dark:text-gray-200">${r.id}</b></div>
+                    <div><span class="text-gray-400 block text-[10px]">TANGGAL</span><b class="text-gray-800 dark:text-gray-200">${r.tanggal}</b></div>
+                    <div><span class="text-gray-400 block text-[10px]">CABANG</span><b class="text-gray-800 dark:text-gray-200">${b ? b.nama : r.cabangId}</b></div>
+                    <div><span class="text-gray-400 block text-[10px]">BANK</span><b class="text-gray-800 dark:text-gray-200">${r.bank}</b></div>
+                </div>
+                <div class="space-y-1.5 py-2">
+                    <div class="flex justify-between"><span class="text-gray-500">Nominal:</span> <b class="font-mono text-gray-800 dark:text-gray-200">${formatRupiah(r.nominal)}</b></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Status:</span> <b class="text-gray-800 dark:text-gray-200">${r.status}</b></div>
+                    <div class="flex justify-between"><span class="text-gray-500">No. Surat:</span> <b class="font-mono text-gray-800 dark:text-gray-200">${r.nomorSurat}</b></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Keterangan:</span> <span class="text-gray-800 dark:text-gray-200 text-right w-2/3 truncate">${r.keterangan}</span></div>
+                </div>
+            `;
+            const modal = document.getElementById('modal-detail');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            const content = document.getElementById('modal-detail-content');
+            content.classList.remove('scale-95');
+        }
+
+        function closeDetailModal() {
+            const modal = document.getElementById('modal-detail');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            const content = document.getElementById('modal-detail-content');
+            content.classList.add('scale-95');
+        }
+
+        function triggerEditRowCommand(recordId) {
+            const r = appRequests.find(x => x.id === recordId);
+            if(!r) return;
+            
+            editModeRecordId = recordId;
+            document.getElementById('edit-mode-banner').classList.remove('hidden');
+            document.getElementById('btn-submit-form').innerHTML = '<i class="fa-solid fa-pen-to-square"></i><span>Update Data Pengajuan</span>';
+            document.getElementById('btn-submit-form').className = "w-full sm:flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-md text-sm transition flex items-center justify-center space-x-2";
+            
+            document.getElementById('form-tanggal').value = r.tanggal;
+            document.getElementById('form-cabang').value = r.cabangId;
+            document.getElementById('form-bank').value = r.bank;
+            document.getElementById('form-nominal').value = r.nominal;
+            document.getElementById('form-pct-cabang').value = r.pctCabang;
+            document.getElementById('form-pct-upc').value = r.pctUpc;
+            document.getElementById('form-keterangan').value = r.keterangan;
+            
+            if(r.nomorSurat && r.nomorSurat !== "-") {
+                document.getElementById('form-nosurat').value = r.nomorSurat;
+                document.getElementById('form-saldokas').value = r.saldoKas || 0;
+                document.getElementById('form-saldogiro').value = r.saldoGiro || 0;
+            }
+            
+            switchMenu('permintaan');
+            calculateFormLogicAndTerbilang();
+            showToast("Mode Edit Aktif", `Mengubah data transaksi ${recordId}`, "info");
+        }
+
+        function executeDeleteRowCommand(recordId) {
+            if(confirm(`Yakin ingin menghapus data pengajuan ${recordId}?`)) {
+                appRequests = appRequests.filter(x => x.id !== recordId);
+                pushAuditLog("HAPUS_PERMINTAAN", `Menghapus data pengajuan Moker ID: ${recordId}`);
+                saveDataToLocalStorage();
+                refreshAllUIViews();
+                showToast("Hapus Berhasil", `Data ${recordId} telah dihapus.`, "success");
+            }
+        }
+
+        function triggerRowLetterCommand(recordId) {
+            globalSelectedIdForLetter = recordId;
+            switchMenu('surat');
+        }
+
+        function renderOfficialLetterPayload(recordId) {
+            const r = appRequests.find(x => x.id === recordId);
+            if(!r) return;
+            const b = DUMMY_BRANCHES.find(x => x.id === r.cabangId);
+            if(!b) return;
+
+            document.getElementById('let-lbl-wilayah').innerText = `KANTOR CABANG ${b.nama.replace('CP ', '').toUpperCase()} • KANWIL VI MAKASSAR`;
+            document.getElementById('let-meta-nosurat').innerText = r.nomorSurat || "-";
+            document.getElementById('let-body-nominal').innerText = formatRupiah(r.nominal);
+            document.getElementById('let-body-terbilang').innerText = translateNumberToWords(r.nominal) + " Rupiah";
+            
+            document.getElementById('let-tbl-saldokas').innerText = formatRupiah(r.saldoKas || 0);
+            document.getElementById('let-tbl-saldogiro').innerText = formatRupiah(r.saldoGiro || 0);
+            document.getElementById('let-tbl-nominal').innerText = formatRupiah(r.nominal);
+            
+            document.getElementById('let-tbl-proj-cabang').innerText = formatRupiah((r.pctCabang / 100) * r.nominal);
+            document.getElementById('let-tbl-proj-upc').innerText = formatRupiah((r.pctUpc / 100) * r.nominal);
+            
+            document.getElementById('let-rek-nama').innerText = b.owner.toUpperCase();
+            document.getElementById('let-rek-nomor').innerText = r.bank === "BNI" ? b.rekBNI : (r.bank === "BRI" ? b.rekBRI : b.rekBSI);
+            document.getElementById('let-rek-bank').innerText = `BANK ${r.bank} KANWIL VI`;
+
+            const d = new Date(r.tanggal);
+            const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            document.getElementById('let-sign-tanggal').innerText = `${b.nama.replace('CP ', '')}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+            
+            document.getElementById('let-sign-jabatan').innerText = `PEMIMPIN PT PEGADAIAN CABANG ${b.nama.replace('CP ', '').toUpperCase()}`;
+            document.getElementById('let-sign-nama').innerText = b.pimpinan.toUpperCase();
+            document.getElementById('let-sign-nik').innerText = `NIK. ${b.nik}`;
+        }
+
+        function printLetterPDF() {
+            window.print();
+        }
+
+        function downloadWordDocument() {
+            showToast("Fitur Segera Hadir", "Ekspor ke Word masih dalam tahap pengembangan.", "info");
+        }
+
+        function exportHistoryToExcel() {
+            showToast("Ekspor Excel", "File Excel dummy berhasil diunduh.", "success");
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const ind = document.getElementById('dark-mode-indicator');
+            if(document.documentElement.classList.contains('dark')) {
+                ind.classList.remove('bg-gray-400');
+                ind.classList.add('bg-pegadaian-green', 'translate-x-3');
+            } else {
+                ind.classList.add('bg-gray-400');
+                ind.classList.remove('bg-pegadaian-green', 'translate-x-3');
+            }
+            if(currentRole === 'KANWIL') {
+                Chart.defaults.color = document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b';
+                refreshAllUIViews();
+            }
+        }
+    </script>
+</body>
+</html>
